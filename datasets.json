@@ -1,0 +1,7 @@
+{
+    "MiniBankAnalysis": {
+        "path": "MiniBank",
+        "files": ["MiniBank.sol"],
+        "functions": []
+    }
+} 
