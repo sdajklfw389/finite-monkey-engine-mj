@@ -4,6 +4,7 @@ import re
 import numpy as np
 import requests
 from openai import OpenAI
+import time
 
 class JSONExtractError(Exception):
     def __init__(self, ErrorInfo):
@@ -104,7 +105,7 @@ def ask_openai_common(prompt):
                 }
             ]
         }
-        response = requests.post(f'https://{api_base}/v1/chat/completions', headers=headers, json=data)
+        response = requests.post(f'https://{api_base}/chat/completions', headers=headers, json=data)
         try:
             response_josn = response.json()
         except Exception as e:
@@ -133,18 +134,10 @@ def ask_openai_for_json(prompt):
             }
         ]
     }
-    # response = requests.post(f'https://{api_base}/v1/chat/completions', headers=headers, json=data)
-    # # if response.status_code != 200:
-    # #     print(response.text)
-    
-    # response_josn = response.json()
-    # if 'choices' not in response_josn:
-    #     return ''
-    # # print(response_josn['choices'][0]['message']['content'])
-    # return response_josn['choices'][0]['message']['content']
     while True:
         try:
-            response = requests.post(f'https://{api_base}/v1/chat/completions', headers=headers, json=data)
+            response = requests.post(f'https://{api_base}/chat/completions', headers=headers, json=data)
+            print("Raw response text:", response.text)
             response_json = response.json()
             if 'choices' not in response_json:
                 return ''
@@ -171,11 +164,12 @@ def ask_openai_for_json(prompt):
                     print("===Error in decoding JSON. Retry request===")
                     continue
                 except Exception as e:
-                    print("===Unexpected error. Retry request===")
-                    print(e)
+                    print(f"===Error in requesting LLM. Retry request===\n{e}")
+                    if 'response' in locals():
+                        print("Response content:", response.text)
                     continue
         except Exception as e:
-            print("===Error in requesting LLM. Retry request===")
+            print(f"===Error in requesting LLM. Retry request===\n{e}")
     return cleaned_json
 
 def extract_json_string(response):
@@ -205,6 +199,7 @@ def common_ask_for_json(prompt):
         return azure_openai_json(prompt)
     else:
         return ask_openai_for_json(prompt)
+
 def ask_claude(prompt):
     model = os.environ.get('CLAUDE_MODEL', 'claude-3-5-sonnet-20241022')
     api_key = os.environ.get('OPENAI_API_KEY','sk-0fzQWrcTc0DASaFT7Q0V0e7c24ZyHMKYgIDpXWrry8XHQAcj')
@@ -226,7 +221,7 @@ def ask_claude(prompt):
     }
 
     try:
-        response = requests.post(f'https://{api_base}/v1/chat/completions', 
+        response = requests.post(f'https://{api_base}/chat/completions', 
                                headers=headers, 
                                json=data)
         response.raise_for_status()
@@ -236,7 +231,7 @@ def ask_claude(prompt):
         else:
             return ""
     except requests.exceptions.RequestException as e:
-        print(f"Claude API调用失败。错误: {str(e)}")
+        print(f"{api_base}调用失败。错误: {str(e)}")
         return ""
 def ask_claude_37(prompt):
     model = 'claude-3-7-sonnet-20250219'
@@ -261,7 +256,7 @@ def ask_claude_37(prompt):
     }
 
     try:
-        response = requests.post(f'https://{api_base}/v1/chat/completions', 
+        response = requests.post(f'https://{api_base}/chat/completions', 
                                headers=headers, 
                                json=data)
         response.raise_for_status()
@@ -271,7 +266,7 @@ def ask_claude_37(prompt):
         else:
             return ""
     except requests.exceptions.RequestException as e:
-        print(f"claude3.7 API调用失败。错误: {str(e)}")
+        print(f"{api_base}调用失败。错误: {str(e)}")
         return ""
 def ask_deepseek(prompt):
     model = 'deepseek-reasoner'
@@ -296,7 +291,7 @@ def ask_deepseek(prompt):
     }
 
     try:
-        response = requests.post(f'https://{api_base}/v1/chat/completions', 
+        response = requests.post(f'https://{api_base}/chat/completions', 
                                headers=headers, 
                                json=data)
         response.raise_for_status()
@@ -339,7 +334,7 @@ def ask_o3_mini_json(prompt):
     }
 
     try:
-        response = requests.post(f'https://{api_base}/v1/chat/completions', 
+        response = requests.post(f'https://{api_base}/chat/completions', 
                                headers=headers, 
                                json=data)
         response.raise_for_status()
@@ -374,7 +369,7 @@ def ask_grok3_deepsearch(prompt):
     }
 
     try:
-        response = requests.post(f'https://{api_base}/v1/chat/completions', 
+        response = requests.post(f'https://{api_base}/chat/completions', 
                                headers=headers, 
                                json=data)
         response.raise_for_status()
@@ -409,7 +404,7 @@ def ask_o3_mini(prompt):
     }
 
     try:
-        response = requests.post(f'https://{api_base}/v1/chat/completions', 
+        response = requests.post(f'https://{api_base}/chat/completions', 
                                headers=headers, 
                                json=data)
         response.raise_for_status()
@@ -435,7 +430,7 @@ def common_ask(prompt):
 def clean_text(text: str) -> str:
     return str(text).replace(" ", "").replace("\n", "").replace("\r", "")
 
-def common_get_embedding(text: str):
+def common_get_embedding(text: str, max_retries: int = 3, retry_delay: int = 1):
     api_key = os.getenv('OPENAI_API_KEY')
     if not api_key:
         raise ValueError("OPENAI_API_KEY environment variable is not set")
@@ -456,14 +451,31 @@ def common_get_embedding(text: str):
         "encoding_format": "float"
     }
 
-    try:
-        response = requests.post(f'https://{api_base}/v1/embeddings', json=data, headers=headers)
-        response.raise_for_status()
-        embedding_data = response.json()
-        return embedding_data['data'][0]['embedding']
-    except requests.exceptions.RequestException as e:
-        print(f"Error: {e}")
-        return list(np.zeros(3072))  # 返回长度为3072的全0数组
+    for attempt in range(max_retries):
+        try:
+            response = requests.post(f'https://{api_base}/embeddings', json=data, headers=headers)
+            response.raise_for_status()
+            embedding_data = response.json()
+            embedding = embedding_data['data'][0]['embedding']
+            
+            # Ensure the embedding is exactly 3072 elements
+            if len(embedding) > 3072:
+                embedding = embedding[:3072]  # Truncate if too long
+            elif len(embedding) < 3072:
+                # Pad with zeros if too short
+                embedding.extend([0.0] * (3072 - len(embedding)))
+            
+            return embedding
+        except requests.exceptions.RequestException as e:
+            print(f"Error getting embedding (attempt {attempt + 1}/{max_retries}): {str(e)}")
+            if attempt < max_retries - 1:
+                time.sleep(retry_delay * (attempt + 1))  # Exponential backoff
+            else:
+                print("Max retries reached. Returning zero vector as fallback.")
+                return list(np.zeros(3072))  # Return zero vector as fallback
+        except Exception as e:
+            print(f"Unexpected error getting embedding: {str(e)}")
+            return list(np.zeros(3072))  # Return zero vector as fallback
 
 def common_ask_confirmation(prompt):
     model_type = os.environ.get('CONFIRMATION_MODEL', 'DEEPSEEK')
