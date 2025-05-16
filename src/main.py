@@ -141,7 +141,7 @@ if __name__ == '__main__':
         dataset_base = "./src/dataset/agent-v1-c4"
         projects = load_dataset(dataset_base)
 
-        project_id = 'MiniBank'
+        project_id = 'L2BaseToken'
         project_path = ''
         project = Project(project_id, projects[project_id])
         
@@ -169,7 +169,7 @@ if __name__ == '__main__':
         parser = argparse.ArgumentParser(description='Process input parameters for vulnerability scanning.')
         parser.add_argument('-fpath', type=str, required=True, help='Combined base path for the dataset and folder')
         parser.add_argument('-id', type=str, required=True, help='Project ID')
-        # parser.add_argument('-cmd', type=str, choices=['detect', 'confirm','all'], required=True, help='Command to execute')
+        parser.add_argument('-cmd', type=str, choices=['detect', 'confirm','all'], required=True, help='Command to execute')
         parser.add_argument('-o', type=str, required=True, help='Output file path')
         # usage:
         # python main.py 

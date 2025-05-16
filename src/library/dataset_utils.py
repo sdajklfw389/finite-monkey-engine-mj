@@ -11,6 +11,7 @@ def function_map_to_white_list(function_map):
 def load_dataset(dataset_path, external_project_id=None, external_project_path=None):
     # Load projects from datasets.json
     if not external_project_id and not external_project_path:
+        print(f"Loading dataset from {dataset_path}")
         ds_json = os.path.join(dataset_path, "datasets.json")
         dj = json.load(open(ds_json, 'r', encoding='utf-8'))
         projects = {}

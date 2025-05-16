@@ -114,6 +114,7 @@ class Project_Task(Base):
 
     def get_result(self, is_gpt4 = False):
         result = self.result
+        print(f"\n📊 Task Result: {result}")
         return None if result == '' else result
     def get_result_CN(self):
         result = self.result_gpt4

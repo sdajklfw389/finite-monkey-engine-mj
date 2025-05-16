@@ -484,6 +484,7 @@ class AiEngine(object):
             
             print(f"\n🎯 提取的结果状态: {result_status}")
             print(f"📏 结果状态长度: {len(result_status)}")
+            print(f"\n📝 完整响应内容: {cleaned_response}")
             
             # 验证结果状态的有效性
             valid_statuses = {"yes", "no", "need creator to decide", "confirmed"}

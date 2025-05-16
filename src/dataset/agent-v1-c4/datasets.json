@@ -4,9 +4,9 @@
         "files": ["MiniBank.sol"],
         "functions": []
     },
-    "airdrop3":{
-        "path":"airdrop",
-        "files":[],
+    "L2BaseToken":{
+        "path":"L2BaseToken",
+        "files":["Address.sol", "Constants.sol", "ERC20.sol", "ERC20Permit.sol", "ERC20Snapshot.sol", "ERC20Votes.sol", "ERC20VotesSnapshot.sol", "IERC20.sol", "IERC20Metadata.sol", "IERC20Permit.sol", "L2BaseToken.sol", "Ownable.sol", "SafeERC20.sol", "Strings.sol", "TokenTimelock.sol"],
         "functions":[]
     }
     
